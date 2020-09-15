@@ -1,5 +1,5 @@
 {
-  "name": "project-hare",
+  "name": "project-hare-client",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
