@@ -5,33 +5,35 @@ const io = require("socket.io")(server);
 const PORT = 8000;
 const moment = require("moment");
 
-const users = {
-  list: ["Bob", "Olivia", "Rick", "Julia"],
-  count: 0,
-  setNickName: function (id) {
-    this[id] = this[id] || this.list[this.count];
-    this.count = ++this.count % this.list.length;
-    return this[id];
-  }
-};
+// const users = {
+//   list: ["Bob", "Olivia", "Rick", "Julia"],
+//   count: 0,
+//   setNickName: function (id) {
+//     this[id] = this[id] || this.list[this.count];
+//     this.count = ++this.count % this.list.length;
+//     return this[id];
+//   }
+// };
 
-// Listening for a "connection" event
+// Will be using the random socket.io ids for now:
+
 io.on("connection", socket => {
-  const nickName = users.setNickName(socket.id);
-  socket.emit("nickname", nickName);
-
-  socket.on("send message", body => {
-    io.emit("message", body);
-  });
-
-  // Inform all users when a new user connects and disconnect
-  io.emit("conn message", `User ${nickName} connected`);
+  if (!users[socket.id]) {
+    users[socket.id] = socket.id;
+  }
+  socket.emit("yourID", socket.id);
+  io.sockets.emit("allUsers", users);
   socket.on("disconnect", () => {
-    io.emit("conn message", `User ${nickName} disconnected`);
-    console.log(`User ${nickName} disconnected`);
+    delete users[socket.id];
   });
 
-  console.log(`${moment()} - User ${socket.id} connected`);
+  socket.on("callUser", data => {
+    io.to(data.userToCall).emit("hey", { signal: data.signalData, from: data.from });
+  });
+
+  socket.on("acceptCall", data => {
+    io.to(data.to).emit("callAccepted", data.signal);
+  });
 });
 
 server.listen(PORT, () => console.log(`Server is listening on port ${PORT}`));
